@@ -44,6 +44,22 @@ def get_directions(origin: str, destination: str, mode: str = "driving") -> dict
     else:
         return f"Error fetching directions: {data['status']}"
     
+    # get midpoint from route
+    steps = data["routes"][0]["legs"][0]["steps"]
+    midpoint_index = len(steps) // 2
+    midpoint_location = steps[midpoint_index]["end_location"]
+    
+    # search for nearby places at the midpoint
+    #midpoint_places = search_location(f"{midpoint_location['lat']},{midpoint_location['lng']}", destination)
+    places_response = requests.get("https://maps.googleapis.com/maps/api/place/nearbysearch/json", params={
+        "location": f"{midpoint_location['lat']},{midpoint_location['lng']}",
+        "radius": 5000,
+        "type": "restaurant",
+        "key": MAPS_API_KEY
+    }, timeout=10)
+    places_response.raise_for_status()
+    places_data = places_response.json()
+    
     return data
 
 root_agent = LlmAgent(
